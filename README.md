@@ -1,23 +1,21 @@
 # music assistant
+> linux music assistant
 
 ## Setup
-
-## Install python packages
+### Install python packages
 ````
 vosk
 yt-dlp
 google-speech
 ````
-
-## Install system packages
+### Install system packages
 ````
 ffmpeg
 mpd
 mpc
 sox
 ````
-
-## Download models
+### Download models
 ````
 https://alphacephei.com/vosk/models
 ````
