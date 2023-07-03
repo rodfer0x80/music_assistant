@@ -1,0 +1,3 @@
+vosk
+yt-dlp
+google-speech
