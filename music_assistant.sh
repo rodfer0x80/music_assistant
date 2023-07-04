@@ -2,19 +2,18 @@
 
 
 # setup py venv
-test -e "$PWD/venv" &&\
-    source "$PWD/venv/bin/activate" ||\
+test -e "$PWD/venv" ||\
     python3 -m venv "$PWD/venv" &&\
     source "$PWD/venv/bin/activate" &&\
     pip install --upgrade pip &&\
     pip install -r "$PWD/requirements.txt"
 
+source "$PWD/venv/bin/activate"
 # clear mpc
 mpc stop
 mpc clear
 
 VOSK_MODEL_PATH="$PWD/models" # vosk models path
-INVIDIOUS_INSTANCE="https://vid.puffyan.us" # search source url
 MUSIC_SOURCE="https://www.youtube.com"
 
 # audio input
