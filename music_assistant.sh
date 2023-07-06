@@ -1,43 +1,81 @@
 #!/bin/bash
+# ----
+# AUTHOR
+# rodfer0x80
+# https://rodfer.cloud/
+# https://github.com/rodfer0x80
+# ----
+# LICENSE
+# ----
+# GLP 2.0
+# ----
+# DEPENDENCIES
+# ffmpeg
+# mpd
+# mpc
+# sox
+# --
 
 
-# setup py venv
-test -e "$PWD/venv" ||\
-    python3 -m venv "$PWD/venv" &&\
-    source "$PWD/venv/bin/activate" &&\
+# models :: 0 -> small || >0 -> full 
+MODEL=0
+# --
+VOSK_MODEL_PATH="/home/rodfer/.cache/music_assistant/models"
+MUSIC_SOURCE="https://www.youtube.com"
+# --
+
+PYREQ="\
+    vosk \
+    yt-dlp \
+    google-speech \
+    "
+
+CWD="$PWD"
+SRC="$(dirname $0)"
+
+cd ~/.cache || exit 1
+test -e ./music_assistant || mkdir ./music_assistant || exit 2
+cd ./music_assistant
+
+if ! [ -e ./models ]; then
+    if [ $MODEL -eq 0 ]; then
+        URL=$(curl -s https://alphacephei.com/vosk/models | grep -oE 'https://alphacephei.com/vosk/models/[a-zA-Z0-9./?=_-]+' | grep -i small | head -n 1)
+    else 
+        URL=$(curl -s https://alphacephei.com/vosk/models | grep -oE 'https://alphacephei.com/vosk/models/[a-zA-Z0-9./?=_-]+' | grep -i en | head -n 2 | tail -n 1)
+    fi
+    FILE=$(echo $URL | cut -d'/' -f6)
+    wget $URL
+    unzip $FILE
+    mv $(echo $FILE | cut -d'.' -f1) ./models
+fi
+
+cd ~/.cache/music_assistant
+test -e "./venv" ||\
+    python3 -m venv "./venv" &&\
+    source "./venv/bin/activate" &&\
     pip install --upgrade pip &&\
-    pip install -r "$PWD/requirements.txt"
+    echo $PYREQ | xargs pip install || exit 4
+source "./venv/bin/activate"
 
-source "$PWD/venv/bin/activate"
-# clear mpc
 mpc stop
 mpc clear
 
-VOSK_MODEL_PATH="$PWD/models" # vosk models path
-MUSIC_SOURCE="https://www.youtube.com"
+WAV_FILE="/tmp/music_assistant_audio.wav"
+TXT_FILE="/tmp/music_assistant_transcript.txt"
 
-# audio input
-ffmpeg -y -f alsa -i default -acodec pcm_s16le -ac 1 -ar 44100 -t 4 -f wav /tmp/mic_audio.wav
+ffmpeg -y -f alsa -i default -acodec pcm_s16le -ac 1 -ar 44100 -t 4 -f wav $WAV_FILE
+vosk-transcriber -m $VOSK_MODEL_PATH -i $WAV_FILE -o $TXT_FILE
+read AUDIO_INPUT < $TXT_FILE
 
-# speech to text
-vosk-transcriber -m $VOSK_MODEL_PATH -i /tmp/mic_audio.wav -o /tmp/mic_audio.txt
-read audio_input < /tmp/mic_audio.txt
+google_speech "Found ...  $AUDIO_INPUT" &
 
-# text to speech
-google_speech "Now playing ...  $audio_input" &
+QUERY="$(printf '%s' "song audio $AUDIO_INPUT" | tr ' ' '+' )"
+VIDEO_ID="$(curl -s "$MUSIC_SOURCE/results?search_query=$QUERY" | grep -oh "/watch?v[^\"*]\+" | head -n 1)"
+YOUTUBE_URL=$(echo "https://youtube.com$VIDEO_ID" | cut -d "\\" -f1)
+AUDIO_URL="$(yt-dlp -f bestaudio --get-url "$YOUTUBE_URL")"
 
-# get mpc uri
-query="$(printf '%s' "song audio $audio_input" | tr ' ' '+' )"
-video_id="$(curl -s "$MUSIC_SOURCE/results?search_query=$query" | grep -oh "/watch?v[^\"*]\+" | head -n 1)"
-youtube_url=$(echo "https://youtube.com$video_id" | cut -d "\\" -f1)
-audio_url="$(yt-dlp -f bestaudio --get-url "$youtube_url")"
-
-# exit py venv
-deactivate
-
-# play sound
 sleep 2
-mpc add "$audio_url"
+mpc add "$AUDIO_URL"
 sleep 4 # needed to load, can adjust for setup
 mpc play
 sleep 4
