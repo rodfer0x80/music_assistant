@@ -53,8 +53,8 @@ cd ~/.cache/music_assistant
 test -e "./venv" ||\
     python3 -m venv "./venv" &&\
     source "./venv/bin/activate" &&\
-    pip install --upgrade pip &&\
-    echo $PYREQ | xargs pip install || exit 4
+    python3 -m pip install --upgrade pip &&\
+    echo $PYREQ | xargs python3 -m pip install || exit 4
 source "./venv/bin/activate"
 
 mpc stop
