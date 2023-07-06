@@ -1,23 +1,11 @@
 # music assistant
 
-## Setup
-
-## Install python packages
 ````
-vosk
-yt-dlp
-google-speech
-````
-
 ## Install system packages
-````
 ffmpeg
 mpd
 mpc
 sox
-````
 
-## Download models
-````
-https://alphacephei.com/vosk/models
+## Choose small (0) or complete (1) model in the script
 ````
